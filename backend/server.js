@@ -3,7 +3,8 @@ import helmet from "helmet";
 import morgan from "morgan";
 import cors from "cors";
 import dotenv from "dotenv";
-
+import productRoutes from "./routes/productRoutes.js";
+import { sql } from "./config/db.js";
 dotenv.config();
 
 const app = express();
@@ -15,27 +16,25 @@ app.use(cors()); //it's a middleware that helps us to allow the requests from th
 
 const PORT = process.env.PORT || 3000;
 
-app.get("/api/products", (req, res) => {
-    //get all the products from the database
-    res.status(200).json({
-        success: true,
-        data: [
-            {
-                id: 1,
-                name: "Product 1",
-            },
-            {
-                id: 2,
-                name: "Product 2",
-            },
-            {
-                id: 3,
-                name: "Product 3",
-            }
-        ]
-    })
-});
+app.use("/api/products", productRoutes);
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+async function initDB() {
+    try {
+        await sql`CREATE TABLE IF NOT EXISTS products (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            image VARCHAR(255) NOT NULL,
+            price DECIMAL(10,2) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`;
+        console.log('Table created successfully');
+    } catch (error) {
+        console.log(`Error creating table: ${error}`);
+    }
+}
+
+initDB().then(() => {
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
 });
